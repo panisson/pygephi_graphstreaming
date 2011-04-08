@@ -1,9 +1,9 @@
 '''
-Use this file with Gephi and Graph Streaming plugin.
+Use this script with Gephi and Graph Streaming plugin.
 1. Open Gephi, create a new project
 2. Go to the tab Streaming, right-click on "Master Server", click on "Start"
 3. Go to the tab Layout, select "Force Atlas" and click "Run"
-4. Run this file
+4. Run this script
 '''
 
 import time

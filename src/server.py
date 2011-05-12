@@ -36,7 +36,13 @@ from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 import urlparse
 import tweepy
 import re
-import simplejson
+try:
+    import simplejson
+except ImportError:
+    try:
+        import json as simplejson
+    except:
+        raise "Requires either simplejson or Python 2.6!"
 import threading
 import Queue
 import socket

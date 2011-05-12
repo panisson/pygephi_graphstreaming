@@ -53,7 +53,6 @@ import time
 
 api = tweepy.API()
 active_queues = []
-message_event = threading.Event()
 
 class StreamingListener(tweepy.StreamListener):
     
@@ -185,6 +184,7 @@ def parseOptions():
     parser.add_option("-p", "--password", type="string", dest="password", help="Twitter password to connect", default='undefined')
     parser.add_option("-q", "--query", type="string", dest="query", help="Comma-separated list of keywords", default="twitter")
     parser.add_option("-l", "--log", type="string", dest="log", help="Output log of streaming data", default="/tmp/stream.log")
+    parser.add_option("-s", "--serverport", type="int", dest="serverport", help="HTTP server port", default=8181)
     (options, _) = parser.parse_args()
     if options.user == 'undefined':
         parser.error("Twitter username is mandatory")
@@ -198,7 +198,7 @@ def main():
     collector.setDaemon(True)
     collector.start()
     try:
-        server = ThreadedHTTPServer(('', 8181), RequestHandler)
+        server = ThreadedHTTPServer(('', options.serverport), RequestHandler)
         print 'Test server running...'
         server.start()
     except KeyboardInterrupt:

@@ -48,9 +48,7 @@ import optparse
 import sys
 import time
 
-api = tweepy.API()
 active_queues = []
-message_event = threading.Event()
 
 class StreamingListener(tweepy.StreamListener):
     
@@ -187,6 +185,7 @@ def parseOptions():
     parser.add_option("-l", "--log", type="string", dest="log", help="Log file of collected streaming data", default='undefined')
     parser.add_option("-t", "--timewarp", type="float", dest="timewarp", help="Time warping factor, used to accelerate or slow down the replay", default='1.0')
     parser.add_option("-d", "--delay", type="int", dest="delay", help="Starting delay in seconds", default='0')
+    parser.add_option("-s", "--serverport", type="int", dest="serverport", help="HTTP server port", default=8181)
     (options, _) = parser.parse_args()
     if options.log == 'undefined':
         parser.error("Log file is mandatory")
@@ -196,7 +195,7 @@ def main():
     options = parseOptions()
 
     try:
-        server = ThreadedHTTPServer(('', 8181), RequestHandler)
+        server = ThreadedHTTPServer(('', options.serverport), RequestHandler)
         
         player = Player(options, server)
         player.setDaemon(True)

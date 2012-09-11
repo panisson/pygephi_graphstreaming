@@ -20,6 +20,10 @@ class JSONClient(object):
     def add_node(self, id, flush=True, **attributes):
         self.data += json.dumps({"an":{id:attributes}}) + '\r\n'
         if(self.autoflush): self.flush()
+        
+    def change_node(self, id, flush=True, **attributes):
+        self.data += json.dumps({"cn":{id:attributes}}) + '\r\n'
+        if(self.autoflush): self.flush()
     
     def delete_node(self, id):
         self.__send(json.dumps({"dn":{id:{}}}))

@@ -22,6 +22,7 @@ def idx(i,j,n):
 # Plane
 for i in range(0,n):
     for j in range(0,n):
+        # put the nodes in a position that is not (0,0)
         node_attributes['x'] = (i%2)+1
         node_attributes['y'] = (j%2)+1
         g.add_node(str(idx(i,j,n)), **node_attributes)
@@ -35,6 +36,12 @@ for i in range(0,n):
             tgt = str(idx(i,j-1,n))
             g.add_edge(src+tgt, src, tgt, directed=False)
         time.sleep(0.05)
+
+# Change size and colors
+node_attributes = {"size":15, 'r':1.0, 'g':0.0, 'b':0.0}
+for i in range(0,n):
+    for j in range(0,n):
+        g.change_node(str(idx(i,j,n)), **node_attributes)
 
 #g.flush()
 time.sleep(30)

@@ -54,6 +54,15 @@ import time
 api = tweepy.API()
 active_queues = []
 
+class Status(object):
+    
+    def __init__(self, status_id, source, target, text, date):
+        self.status_id = status_id
+        self.source = source
+        self.target = target
+        self.text = text
+        self.date = date
+
 class StreamingListener(tweepy.StreamListener):
     
     def __init__(self, *args, **kwargs):
@@ -73,15 +82,64 @@ class StreamingListener(tweepy.StreamListener):
         if m:
             source_user = m.group(0).lower()
             target_user = status.user.screen_name
-            id = status.id
+            status_id = status.id
             date = status.created_at
             text = status.text
             
-            dispatch_event((id, source_user, target_user, text, date))
+            dispatch_event(Status(status_id, source_user, target_user, text, date))
             
 def dispatch_event(e):
     for q in active_queues:
         q.put(e)
+        
+class RequestProcessor():
+    
+    def __init__(self, parameters):
+        
+        self.known_users = {}
+        
+        if "q" in parameters:
+            q = parameters["q"][0]
+            self.terms = q.split(",")
+            print "Request for retweets, query '%s'"%q
+        else:
+            self.terms = None
+            print "Request for retweets, no query string"
+        
+        
+    
+    def process(self, status):
+        messages = []
+        
+        found = False
+        if (self.terms):
+            for term in self.terms:
+                if re.search(term, status.text.lower()):
+                    found = True
+                    break
+            if not found:
+                return messages
+            
+        default_node_attr = {'size':5, 'r':84./255., 'g':148./255., 'b':183./255.}
+            
+        if status.source not in self.known_users:
+            self.known_users[status.source] = status.source
+            attributes = default_node_attr.copy()
+            attributes['label'] = status.source
+            event = simplejson.dumps({'an':{status.source:attributes}})
+            messages.append(event)
+            
+        if status.target not in self.known_users:
+            self.known_users[status.target] = status.target
+            attributes = default_node_attr.copy()
+            attributes['label'] = status.target
+            event = simplejson.dumps({'an':{status.target:attributes}})
+            messages.append(event)
+        
+        event = simplejson.dumps({'ae':{status.status_id:{'source':status.source, 'target':status.target, 'directed':True, 'weight':2.0, 'date':str(status.date)}}})
+        messages.append(event)
+            
+        return messages
 
 class RequestHandler(BaseHTTPRequestHandler):
 
@@ -95,50 +153,24 @@ class RequestHandler(BaseHTTPRequestHandler):
         
         param_str = urlparse.urlparse(self.path).query
         parameters = urlparse.parse_qs(param_str, keep_blank_values=False)
-        if "q" not in parameters:
-            return
-        
-        q = parameters["q"][0]
-        terms = q.split(",")
-        
-        print "Request for retweets, query '%s'"%q
         
         self.queue = Queue.Queue()
-        self.known_users = {}
         active_queues.append(self.queue)
         
         self.wfile.write('\r\n')
         
+        request_processor = RequestProcessor(parameters)
+        
         while True:
                         
-            (id, source, target, text, date) = self.queue.get()
-            if id == None:
-                break
-            
-            found = False
-            for term in terms:
-                if re.search(term, text.lower()):
-                    found = True
-            if not found:
-                continue
+            status = self.queue.get()
+            if status is None: break
+            messages = request_processor.process(status)
             
             try:
-                
-                if source not in self.known_users:
-                    self.known_users[source] = source
-                    event = simplejson.dumps({'an':{source:{'label':source, 'size':5, 'r':84./255., 'g':148./255., 'b':183./255.}}})
-                    self.wfile.write(event)
-                    self.wfile.write('\r\n\r\n')
-                    
-                if target not in self.known_users:
-                    self.known_users[target] = target
-                    event = simplejson.dumps({'an':{target:{'label':target, 'size':5, 'r':84./255., 'g':148./255., 'b':183./255.}}})
-                    self.wfile.write(event)
+                for message in messages:
+                    self.wfile.write(message)
                     self.wfile.write('\r\n')
-                
-                event = simplejson.dumps({'ae':{id:{'source':source, 'target':target, 'directed':True, 'weight':2.0, 'date':str(date)}}})
-                self.wfile.write(event)
-                self.wfile.write('\r\n')
                 
             except socket.error:
                 print "Connection closed"
@@ -204,7 +236,7 @@ def main():
     except KeyboardInterrupt:
         print 'Stopping server...'
         server.stop()
-        dispatch_event((None, None, None, None, None))
+        dispatch_event(None)
         sys.exit(0)
 
 if __name__ == '__main__':

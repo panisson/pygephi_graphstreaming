@@ -33,21 +33,14 @@ Created on Nov 10, 2010
 @author: panisson
 '''
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
+from SocketServer import ThreadingMixIn
 import urlparse
 import tweepy
 import re
-from pygephi.client import GephiFileHandler
-try:
-    import simplejson
-except ImportError:
-    try:
-        import json as simplejson
-    except:
-        raise "Requires either simplejson or Python 2.6!"
+from pygephi import GephiFileHandler
 import threading
 import Queue
 import socket
-from SocketServer import ThreadingMixIn
 import optparse
 import sys
 import time

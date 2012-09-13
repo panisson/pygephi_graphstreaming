@@ -1,5 +1,11 @@
 import urllib2
-import json
+try:
+    import json
+except ImportError:
+    try:
+        import simplejson as json
+    except:
+        raise "Requires either simplejson or Python 2.6!"
 
 class JSONClient(object):
     

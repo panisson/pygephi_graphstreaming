@@ -9,7 +9,7 @@ Use this script with Gephi and Graph Streaming plugin.
 import pygephi
 import time
 
-g = pygephi.JSONClient('http://localhost:8080/workspace0', autoflush=True)
+g = pygephi.GephiClient('http://localhost:8080/workspace0', autoflush=True)
 g.clean()
 
 n = 20

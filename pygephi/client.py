@@ -3,19 +3,18 @@ import json
 
 class JSONClient(object):
     
-    def __init__(self, url='http://127.0.0.1:8080/workspace0', autoflush=False):
-        self.url = url
+    def __init__(self, autoflush=False):
         self.data = ""
         self.autoflush = autoflush
         
     def flush(self):
         if len(self.data) > 0:
-            self.__send(self.data)
+            self._send(self.data)
             self.data = ""
         
-    def __send(self, data):
-        conn = urllib2.urlopen(self.url+ '?operation=updateGraph', data)
-        return conn.read()
+    def _send(self, data):
+        print 'passing'
+        pass
         
     def add_node(self, id, flush=True, **attributes):
         self.data += json.dumps({"an":{id:attributes}}) + '\r\n'
@@ -26,7 +25,7 @@ class JSONClient(object):
         if(self.autoflush): self.flush()
     
     def delete_node(self, id):
-        self.__send(json.dumps({"dn":{id:{}}}))
+        self._send(json.dumps({"dn":{id:{}}}))
     
     def add_edge(self, id, source, target, directed=True, **attributes):
         attributes['source'] = source
@@ -36,7 +35,18 @@ class JSONClient(object):
         if(self.autoflush): self.flush()
     
     def delete_edge(self, id):
-        self.__send(json.dumps({"de":{id:{}}}))
+        self._send(json.dumps({"de":{id:{}}}))
         
     def clean(self):
-        self.__send(json.dumps({"dn":{"filter":"ALL"}}))
+        self._send(json.dumps({"dn":{"filter":"ALL"}}))
+
+
+class GephiClient(JSONClient):
+    
+    def __init__(self, url='http://127.0.0.1:8080/workspace0', autoflush=False):
+        JSONClient.__init__(self, autoflush)
+        self.url = url
+        
+    def _send(self, data):
+        conn = urllib2.urlopen(self.url+ '?operation=updateGraph', data)
+        return conn.read()

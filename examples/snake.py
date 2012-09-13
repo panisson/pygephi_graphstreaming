@@ -7,35 +7,10 @@ Use this script with Gephi and Graph Streaming plugin.
 '''
 
 import time
-import urllib2
-import json
+import pygephi
 
-class JSONClient(object):
-    
-    def __init__(self, url='http://127.0.0.1:8080/workspace0'):
-        self.url = url
-        
-    def __send(self, data):
-        conn = urllib2.urlopen(self.url+ '?operation=updateGraph', data)
-        return conn.read()
-        
-    def add_node(self, id, **attributes):
-        self.__send(json.dumps({"an":{id:attributes}}))
-    
-    def delete_node(self, id):
-        self.__send(json.dumps({"dn":{id:{}}}))
-    
-    def add_edge(self, id, source, target, directed=True, **attributes):
-        attributes['source'] = source
-        attributes['target'] = target
-        attributes['directed'] = directed
-        self.__send(data = json.dumps({"ae":{id:attributes}}))
-    
-    def delete_edge(self, id):
-        self.__send(json.dumps({"de":{id:{}}}))
-
-g = JSONClient('http://localhost:8080/workspace0')
-#g.clear()
+g = pygephi.GephiClient('http://localhost:8080/workspace0', autoflush=True)
+g.clean()
 n = 10000
 node_attributes = {"size":10, 'r':1.0, 'g':0.0, 'b':0.0, 'x':1}
 

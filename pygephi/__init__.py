@@ -1,2 +1,2 @@
-from client import JSONClient
+from client import GephiClient
 

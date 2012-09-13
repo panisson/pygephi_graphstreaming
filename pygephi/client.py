@@ -50,3 +50,12 @@ class GephiClient(JSONClient):
     def _send(self, data):
         conn = urllib2.urlopen(self.url+ '?operation=updateGraph', data)
         return conn.read()
+    
+class GephiFileHandler(JSONClient):
+    
+    def __init__(self, out):
+        JSONClient.__init__(self, autoflush=True)
+        self.out = out
+        
+    def _send(self, data):
+        self.out.write(data)

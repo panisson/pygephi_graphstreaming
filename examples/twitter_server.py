@@ -36,6 +36,7 @@ from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 import urlparse
 import tweepy
 import re
+from pygephi.client import GephiFileHandler
 try:
     import simplejson
 except ImportError:
@@ -94,7 +95,7 @@ def dispatch_event(e):
         
 class RequestProcessor():
     
-    def __init__(self, parameters):
+    def __init__(self, parameters, out):
         
         self.known_users = {}
         
@@ -106,7 +107,7 @@ class RequestProcessor():
             self.terms = None
             print "Request for retweets, no query string"
         
-        
+        self.handler = GephiFileHandler(out)
     
     def process(self, status):
         messages = []
@@ -126,20 +127,16 @@ class RequestProcessor():
             self.known_users[status.source] = status.source
             attributes = default_node_attr.copy()
             attributes['label'] = status.source
-            event = simplejson.dumps({'an':{status.source:attributes}})
-            messages.append(event)
+            self.handler.add_node(status.source, **attributes)
             
         if status.target not in self.known_users:
             self.known_users[status.target] = status.target
             attributes = default_node_attr.copy()
             attributes['label'] = status.target
-            event = simplejson.dumps({'an':{status.target:attributes}})
-            messages.append(event)
+            self.handler.add_node(status.target, **attributes)
         
-        event = simplejson.dumps({'ae':{status.status_id:{'source':status.source, 'target':status.target, 'directed':True, 'weight':2.0, 'date':str(status.date)}}})
-        messages.append(event)
-            
-        return messages
+        attributes = {'directed':True, 'weight':2.0, 'date':str(status.date)}
+        self.handler.add_edge(status.status_id, status.source, status.target, **attributes)
 
 class RequestHandler(BaseHTTPRequestHandler):
 
@@ -159,18 +156,16 @@ class RequestHandler(BaseHTTPRequestHandler):
         
         self.wfile.write('\r\n')
         
-        request_processor = RequestProcessor(parameters)
+        request_processor = RequestProcessor(parameters, self.wfile)
         
         while True:
                         
             status = self.queue.get()
             if status is None: break
-            messages = request_processor.process(status)
             
             try:
-                for message in messages:
-                    self.wfile.write(message)
-                    self.wfile.write('\r\n')
+                
+                request_processor.process(status)
                 
             except socket.error:
                 print "Connection closed"

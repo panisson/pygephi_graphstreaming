@@ -30,11 +30,25 @@ except ImportError:
     except:
         raise "Requires either simplejson or Python 2.6!"
 
+import time
+
 class JSONClient(object):
     
-    def __init__(self, autoflush=False):
+    def __init__(self, autoflush=False, enable_timestamps=False, process_event_hook=None):
         self.data = ""
         self.autoflush = autoflush
+        self.enable_timestamps = enable_timestamps
+        
+        if enable_timestamps:
+            def default_peh(event):
+                event['t'] = int(time.time())
+                return event
+        else:
+            default_peh = lambda e: e
+        if process_event_hook is None:
+            self.peh = default_peh
+        else:
+            self.peh = lambda e: default_peh(process_event_hook(e))
         
     def flush(self):
         if len(self.data) > 0:
@@ -46,29 +60,28 @@ class JSONClient(object):
         pass
         
     def add_node(self, id, flush=True, **attributes):
-        self.data += json.dumps({"an":{id:attributes}}) + '\r\n'
+        self.data += json.dumps(self.peh({"an":{id:attributes}})) + '\r\n'
         if(self.autoflush): self.flush()
         
     def change_node(self, id, flush=True, **attributes):
-        self.data += json.dumps({"cn":{id:attributes}}) + '\r\n'
+        self.data += json.dumps(self.peh({"cn":{id:attributes}})) + '\r\n'
         if(self.autoflush): self.flush()
     
     def delete_node(self, id):
-        self._send(json.dumps({"dn":{id:{}}}))
+        self._send(json.dumps({"dn":{id:{}}}) + '\r\n')
     
     def add_edge(self, id, source, target, directed=True, **attributes):
         attributes['source'] = source
         attributes['target'] = target
         attributes['directed'] = directed
-        self.data += json.dumps({"ae":{id:attributes}}) + '\r\n'
+        self.data += json.dumps(self.peh({"ae":{id:attributes}})) + '\r\n'
         if(self.autoflush): self.flush()
     
     def delete_edge(self, id):
-        self._send(json.dumps({"de":{id:{}}}))
+        self._send(json.dumps(self.peh({"de":{id:{}}})) + '\r\n')
         
     def clean(self):
-        self._send(json.dumps({"dn":{"filter":"ALL"}}))
-
+        self._send(json.dumps(self.peh({"dn":{"filter":"ALL"}})) + '\r\n')
 
 class GephiClient(JSONClient):
     
@@ -82,8 +95,9 @@ class GephiClient(JSONClient):
     
 class GephiFileHandler(JSONClient):
     
-    def __init__(self, out):
-        JSONClient.__init__(self, autoflush=True)
+    def __init__(self, out, **params):
+        params['autoflush'] = True
+        JSONClient.__init__(self, **params)
         self.out = out
         
     def _send(self, data):

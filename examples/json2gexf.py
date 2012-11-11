@@ -44,20 +44,30 @@ node_properties = set(['label', 'r', 'g', 'b'])
 edge_properties = set(['source', 'target', 'directed', 'label', 'r', 'g', 'b'])
 
 def inject_node_property(node, attr_id, value):
+    if attr_id in ['r', 'g', 'b']:
+        color = int(value*255)
+        setattr(node, attr_id, str(color))
+    else:
+        setattr(node, attr_id, str(value))
+
+def add_node_attribute(node, attr_id, value):
     if attr_id not in node_properties:
         if attr_id not in graph._attributes['node']:
             graph.addNodeAttribute(title=attr_id, type='string', mode='dinamic', force_id=attr_id)
         node.addAttribute(attr_id, value=str(value))
     else:
-        setattr(node, attr_id, str(value))
-        
+        inject_node_property(node, attr_id, value)
+
 def inject_edge_property(edge, attr_id, value):
+    setattr(edge, attr_id, str(value))
+
+def add_edge_attribute(edge, attr_id, value):
     if attr_id not in edge_properties:
         if attr_id not in graph._attributes['edge']:
             graph.addEdgeAttribute(title=attr_id, type='string', mode='dinamic', force_id=attr_id)
         edge.addAttribute(attr_id, value=str(value))
     else:
-        setattr(edge, attr_id, str(value))
+        inject_edge_property(edge, attr_id, str(value))
 
 def add_node(id, t, node_data):
     if id in graph.nodes:
@@ -67,7 +77,7 @@ def add_node(id, t, node_data):
     
     node.spells.append({'start':str(t)})
     for attr_id, value in node_data.items():
-        inject_node_property(node, attr_id, value)
+        add_node_attribute(node, attr_id, value)
     
 def change_node(id, t, node_data):
     pass
@@ -84,9 +94,7 @@ def add_edge(id, source, target, directed, t, edge_data):
     
     edge.spells.append({'start':str(t)})
     for attr_id, value in edge_data.items():
-        if attr_id not in graph._attributes['edge']:
-            graph.addNodeAttribute(title=attr_id, type='string', mode='dinamic', force_id=attr_id)
-        edge.addAttribute(attr_id, value=str(value))
+        add_edge_attribute(edge, attr_id, value)
     
 def change_edge(id, t, edge_data):
     pass

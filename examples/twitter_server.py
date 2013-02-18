@@ -193,6 +193,12 @@ class Collector(threading.Thread):
         
         print "Streaming retweets for query '%s'"%q
         listener = StreamingListener()
+        
+        def on_error(status_code):
+            if status_code == 401:
+                raise Exception("Authentication error")
+        listener.on_error = on_error
+        
         listener.stream_log = file(self.options.log, 'a')
         auth = tweepy.BasicAuthHandler(self.options.user, self.options.password)
         stream = tweepy.streaming.Stream(auth, listener, timeout=60.0)

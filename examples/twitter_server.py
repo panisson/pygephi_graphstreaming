@@ -200,7 +200,8 @@ class Collector(threading.Thread):
         listener.on_error = on_error
         
         listener.stream_log = file(self.options.log, 'a')
-        auth = tweepy.BasicAuthHandler(self.options.user, self.options.password)
+        auth = tweepy.OAuthHandler(self.options.consumer_key, self.options.consumer_secret)
+        auth.set_access_token(self.options.access_token, self.options.access_token_secret)
         stream = tweepy.streaming.Stream(auth, listener, timeout=60.0)
         while (True):
             try:
@@ -223,16 +224,18 @@ class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
         
 def parseOptions():
     parser = optparse.OptionParser()
-    parser.add_option("-u", "--user", type="string", dest="user", help="Twitter username to connect", default='undefined')
-    parser.add_option("-p", "--password", type="string", dest="password", help="Twitter password to connect", default='undefined')
+    parser.add_option("-k", "--consumer_key", type="string", dest="consumer_key", help="Twitter consumer key for OAuth authentication", default='undefined')
+    parser.add_option("-K", "--consumer_secret", type="string", dest="consumer_secret", help="Twitter consumer secret", default='undefined')
+    parser.add_option("-t", "--access_token", type="string", dest="access_token", help="Twitter access token", default='undefined')
+    parser.add_option("-T", "--access_token_secret", type="string", dest="access_token_secret", help="Twitter access token secret", default='undefined')
     parser.add_option("-q", "--query", type="string", dest="query", help="Comma-separated list of keywords", default="twitter")
     parser.add_option("-l", "--log", type="string", dest="log", help="Output log of streaming data", default="/tmp/stream.log")
     parser.add_option("-s", "--serverport", type="int", dest="serverport", help="HTTP server port", default=8181)
     (options, _) = parser.parse_args()
-    if options.user == 'undefined':
-        parser.error("Twitter username is mandatory")
-    if options.password == 'undefined':
-        options.password = raw_input("Password for Twitter user '%s': "%options.user)
+    if options.consumer_key == 'undefined' or options.consumer_secret == 'undefined':
+        parser.error("Twitter consumer key and consumer secret are mandatory")
+    if options.access_token == 'undefined' or options.access_token_secret == 'undefined':
+        parser.error("Twitter access token and access token secret are mandatory")
     return options
         
 def main():

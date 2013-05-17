@@ -164,7 +164,7 @@ class RequestHandler(BaseHTTPRequestHandler):
         self.queue = Queue.Queue()
         active_queues.append(self.queue)
         
-        self.wfile.write('\r\n')
+        self.wfile.write("HTTP/1.1 200 OK\nContent-Type: application/json\n\n")
         
         request_processor = RequestProcessor(parameters, self.wfile)
         
